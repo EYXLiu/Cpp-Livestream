@@ -47,7 +47,5 @@ void VideoCapture::capture_loop() {
             std::lock_guard<std::mutex> lock(mtx_);
             latest_frame_ = frame.clone();
         }
-        //to control fps
-        //std::this_thread::sleep_for(std::chrono::milliseconds(10));
     }
 }
