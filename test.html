@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>WebSocket MJPEG Viewer</title>
+  <style>
+    body {
+      font-family: system-ui, sans-serif;
+      background: #111;
+      color: #eee;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1rem;
+      padding: 2rem;
+    }
+    #log {
+      width: 80%;
+      height: 150px;
+      overflow-y: auto;
+      border: 1px solid #555;
+      padding: 1rem;
+      background: #222;
+      font-family: monospace;
+      white-space: pre-wrap;
+    }
+    img {
+      border: 2px solid #555;
+      max-width: 80%;
+    }
+    button {
+      padding: 0.5rem 1rem;
+      font-size: 1rem;
+      margin: 0.2rem;
+    }
+  </style>
+</head>
+<body>
+  <h1>WebSocket Test Viewer</h1>
+
+  <div>
+    <button id="connectBtn">Connect</button>
+    <button id="disconnectBtn">Disconnect</button>
+  </div>
+
+  <img id="stream" src="" alt="WS stream will appear here">
+  <div id="log"></div>
+
+  <script>
+    const logDiv = document.getElementById("log");
+    const streamImg = document.getElementById("stream");
+    let ws = null;
+
+    function log(msg, type="info") {
+      const line = document.createElement("div");
+      line.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
+      line.style.color = type === "error" ? "red" : "#0f0";
+      logDiv.appendChild(line);
+      logDiv.scrollTop = logDiv.scrollHeight;
+    }
+
+    document.getElementById("connectBtn").onclick = () => {
+      if (ws && ws.readyState === WebSocket.OPEN) {
+        log("Already connected");
+        return;
+      }
+
+      ws = new WebSocket("ws://localhost:9090");
+      ws.binaryType = "arraybuffer";
+
+      ws.onopen = () => log("Connected to ws://localhost:9090");
+      ws.onclose = () => log("Disconnected", "error");
+      ws.onerror = e => log("Error: " + e.message, "error");
+
+      ws.onmessage = event => {
+        const blob = new Blob([event.data], {type: "image/jpeg"});
+        const url = URL.createObjectURL(blob);
+        streamImg.src = url;
+
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+      };
+    };
+
+    document.getElementById("disconnectBtn").onclick = () => {
+      if (ws) {
+        ws.close();
+        log("Disconected");
+        ws = null;
+      }
+    };
+  </script>
+</body>
+</html>

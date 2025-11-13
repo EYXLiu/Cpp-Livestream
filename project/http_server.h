@@ -4,13 +4,6 @@
 #include <opencv2/opencv.hpp>
 #include <thread>
 #include <atomic>
-#include <mutex>
-#include <string>
-#include <vector>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include <unistd.h>
 
 #include "ml_model.h"
 

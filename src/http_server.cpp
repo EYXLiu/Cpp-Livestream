@@ -1,5 +1,15 @@
 #include "http_server.h"
+
 #include <iostream>
+#include <mutex>
+#include <string>
+#include <vector>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <unistd.h>
+
+#include "base64.h"
 
 HttpServer::HttpServer(int port): port_(port), server_fd_(-1) {}
 
@@ -58,7 +68,7 @@ void HttpServer::stream_loop(Model& model) {
               << "\033[24m"
               << "port " << port_ 
               << "\033[0m"
-              << "\033]8;;\033\\\n";
+              << "\033]8;;\033\\\n" << std::endl;
 
     while (running_) {
         int client_fd = accept(server_fd_, nullptr, nullptr);
