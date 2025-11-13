@@ -21,3 +21,4 @@ Designed for multiple concurrent clients <br/>
 # ML Integration
 Place the OpenCV model into repository, change Model constructor to `Model mdl(<path to model>);` <br/>
 - Requires file to be .XML but it is possible to change code to accomodate for DNN files (`.prototxt` + `.caffemodel`, `.pb`, `.pbtext`, `.onnx`, `.cfg` + `.weights`) <br/>
+- Dynamic casting will be implemented in the future
