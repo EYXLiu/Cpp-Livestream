@@ -53,7 +53,12 @@ void HttpServer::stream_loop(Model& model) {
         return;
     }
 
-    std::cout << "HTTP MJPEG server running on port " << port_ << std::endl;
+    std::cout << "HTTP MJPEG server running on " 
+              << "\033]8;;http://localhost:" << port_ << "\033\\" 
+              << "\033[24m"
+              << "port " << port_ 
+              << "\033[0m"
+              << "\033]8;;\033\\\n";
 
     while (running_) {
         int client_fd = accept(server_fd_, nullptr, nullptr);
