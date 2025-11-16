@@ -20,12 +20,19 @@ HttpServer::~HttpServer() {
 void HttpServer::start(Model& model) {
     if (running_) return;
 
+    encoder_thread_ = std::thread(&HttpServer::encoder_loop, this, std::ref(model));
+    encoder_running_ = true;
+
     thread_ = std::thread(&HttpServer::stream_loop, this, std::ref(model));
     running_ = true;
 }
 
 void HttpServer::stop() {
     if (!running_) return;
+
+    if (encoder_thread_.joinable()) {
+        encoder_thread_.join();
+    }
 
     if (thread_.joinable()) {
         thread_.join();
@@ -35,6 +42,7 @@ void HttpServer::stop() {
         close(server_fd_);
     }
 
+    encoder_running_ = false;
     running_ = false;
 }
 
@@ -84,20 +92,40 @@ void HttpServer::stream_loop(Model& model) {
     server_fd_ = -1;
 }
 
+void HttpServer::encoder_loop(Model& model) {
+    while (encoder_running_) {
+        cv::Mat frame = model.get_annotated();
+        if (frame.empty()) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(10));
+            continue;
+        }
+
+        std::vector<uchar> buf;
+        cv::imencode(".jpg", frame, buf);
+        {
+            std::lock_guard<std::mutex> lock(jpeg_mutex_);
+            latest_jpeg_.swap(buf);
+        }
+        std::this_thread::sleep_for(std::chrono::milliseconds(33));
+    }
+}
+
 void HttpServer::handle_client(int client_fd, Model& model) {
     std::string header = "HTTP/1.1 200 OK\r\n" "Content-Type: multipart/x-mixed-replace; boundary=frame\r\n\r\n";
 
     send(client_fd, header.c_str(), header.size(), 0);
 
     while (running_) {
-         cv::Mat frame = model.get_annotated();
-         if (frame.empty()) {
+         std::vector<uchar> buffer;
+         {
+            std::lock_guard<std::mutex> lock(jpeg_mutex_);
+            buffer = latest_jpeg_;
+         }
+
+         if (buffer.empty()) {
             std::this_thread::sleep_for(std::chrono::milliseconds(10));
             continue;
          }
-
-         std::vector<uchar> buffer;
-         cv::imencode(".jpg", frame, buffer);
 
          std::string boundary = "--frame\r\n" "Content-Type: image/jpeg\r\n" "Content-Length: " + std::to_string(buffer.size()) + "\r\n\r\n";
 

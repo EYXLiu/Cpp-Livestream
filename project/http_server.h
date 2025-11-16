@@ -16,11 +16,17 @@ public:
 
 private:
     void stream_loop(Model& model);
+    void encoder_loop(Model& model);
     void handle_client(int client_fd, Model& model);
     std::thread thread_;
     std::atomic<bool> running_{false};
     int port_;
     int server_fd_;
+
+    std::vector<uchar> latest_jpeg_;
+    std::mutex jpeg_mutex_;
+    std::thread encoder_thread_;
+    std::atomic<bool> encoder_running_{false};
 };
 
 #endif
